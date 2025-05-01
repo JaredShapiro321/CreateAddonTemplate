@@ -1,2 +1,2 @@
-# CreateAddonTemplate
+# Create Addon Template
 
