@@ -1,0 +1,97 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public' }
+    }
+    dependencies { classpath 'org.spongepowered:mixingradle:+' }
+}
+
+plugins {
+    id 'idea'
+    id 'eclipse'
+    id 'net.minecraftforge.gradle' version '+'
+    id 'org.parchmentmc.librarian.forgegradle' version '+'
+    id "me.modmuss50.mod-publish-plugin" version '+'
+}
+
+apply plugin: 'org.spongepowered.mixin'
+
+group = mod_group_id
+version = "$minecraft_version-$mod_version"
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: mapping_channel, version: "$parchment_version-$mapping_version"
+    copyIdeResources = true
+    runs {
+        configureEach {
+            args "-mixin.config=${mod_id}.mixins.json"
+            workingDirectory project.file('run')
+            mods { "$mod_id" { source sourceSets.main } }
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+        client { args '--username', "Dev" }
+        server { args '--nogui' }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'MinecraftForge'
+        url = 'https://maven.minecraftforge.net'
+        content {
+            includeGroup("curse.maven")
+            includeGroup("org.spongepowered")
+        }
+    }
+    maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
+    maven { url = "https://maven.tterrag.com" } // Registrate
+    maven { url = "https://maven.shedaniel.me" } // Cloth Config API
+    maven { url = 'https://maven.blamejared.com' } // JEI
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:$minecraft_version-$forge_version"
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+    implementation fg.deobf("com.simibubi.create:create-$minecraft_version:$create_version:slim") { transitive = false }
+    implementation fg.deobf("net.createmod.ponder:Ponder-Forge-$minecraft_version:$ponder_version")
+    compileOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-$minecraft_version:$flywheel_version")
+    runtimeOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-$minecraft_version:$flywheel_version")
+    implementation fg.deobf("com.tterrag.registrate:Registrate:$registrate_version")
+    implementation fg.deobf("io.github.llamalad7:mixinextras-forge:0.5.0-rc.2")
+    implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:$cloth_config_version")
+    implementation fg.deobf("mezz.jei:jei-$minecraft_version-forge:$jei_version")
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+        minecraft_version       : minecraft_version,
+        minecraft_version_range : minecraft_version_range,
+        forge_version           : forge_version,
+        forge_version_range     : forge_version_range,
+        loader_version_range    : loader_version_range,
+        mod_id                  : mod_id,
+        mod_name                : mod_name,
+        mod_license             : mod_license,
+        mod_version             : mod_version,
+        mod_authors             : mod_authors,
+        mod_description         : mod_description,
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+jar { manifest { attributes([MixinConfigs: mod_id + '.mixins.json']) }; exclude('mixin.refmap.json') }

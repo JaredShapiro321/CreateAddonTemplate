@@ -1,0 +1,8 @@
+{
+    "required": false,
+    "minVersion": "0",
+    "package": "io.github.jaredshapiro321.createaddontemplate.mixin",
+    "client": [
+
+    ]
+}
